@@ -2,13 +2,30 @@
 // Created by Alex Brodsky on 2023-05-07.
 //
 
+#include <malloc.h>
 #include "process.h"
 #include "prio_q.h"
+#include <pthread.h>
+//need separate queue for all thread
+//need to store proc for each thread
+//need to figure out how to simulate each thread
+//need separate quantum and time for all of them
+static prio_q_t *finished;
+typedef struct threadNode{
+    int n; //curr size;
+    context **procs;
+    int quantum;
+    int time;
+    prio_q_t *blocked;
+    prio_q_t *ready;
+    int next_proc_id;
+} threadNode;
+static threadNode *nodes;
 
-static prio_q_t *blocked;
-static prio_q_t *ready;
-static int time = 0;
-static int next_proc_id = 1;
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+//static int time = 0;
+//static ;
 
 enum {
     PROC_NEW = 0,
@@ -20,7 +37,7 @@ enum {
 
 static char *states[] = {"new", "ready", "running", "blocked", "finished"};
 
-static int quantum;
+//static int quantum;
 
 /* Initialize the simulation
  * @params:
@@ -28,13 +45,31 @@ static int quantum;
  * @returns:
  *   returns 1
  */
-extern int process_init(int cpu_quantum) {
+extern void finished_queue_init(){
+    finished = prio_q_new();
+}
+//function to initialize the array of threadNodes
+extern int process_threadNodes_init(int numNodes){
+    nodes = (threadNode *)calloc(numNodes + 1, sizeof(threadNode));
+    if(nodes){
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+
+extern int process_init(int cpu_quantum, int nodeId) {
     /* Set up the queues and store the quantum
      * Assume the queues will be allocated
      */
-    quantum = cpu_quantum;
-    blocked = prio_q_new();
-    ready = prio_q_new();
+    nodes[nodeId].n=0;
+    nodes[nodeId].procs= calloc(100, sizeof(context *));
+    nodes[nodeId].quantum = cpu_quantum;
+    nodes[nodeId].time = 0;
+    nodes[nodeId].blocked = prio_q_new();
+    nodes[nodeId].ready = prio_q_new();
+    nodes[nodeId].next_proc_id = 1;
     return 1;
 }
 
@@ -43,9 +78,20 @@ extern int process_init(int cpu_quantum) {
  *   proc: process' context
  * @returns:
  *   none
- */
-static void print_process(context *proc) {
-    printf("%5.5d: process %d %s\n", time, proc->id, states[proc->state]);
+ */ //AL
+
+extern void print_final_stats(){
+    while(!prio_q_empty(finished)){
+        context *cur = prio_q_remove(finished);
+        printf("| %5.5d | Proc %02d.%02d | Run %d, Block %d, Wait %d\n",nodes[cur->node].time, cur->node, cur->id, cur->doop_time,cur->block_time, cur->wait_time);
+    }
+}
+
+static void print_process(context *proc, int time) {
+    //pthread_mutex_lock(&lock);
+    printf("[%02d] %5.5d: process %d %s\n" ,proc->node, time, proc->id, states[proc->state]);
+    //pthread_mutex_lock(&lock);
+
 }
 
 /* Compute priority of process, depending on whether SJF or priority based scheduling is used
@@ -70,7 +116,7 @@ static int actual_priority(context *proc) {
  * @returns:
  *   none
  */
-static void insert_in_queue(context *proc, int next_op) {
+static void insert_in_queue(context *proc, int next_op) { //***//
     /* If current primitive is done, move to next
      */
     if (next_op) {
@@ -87,19 +133,23 @@ static void insert_in_queue(context *proc, int next_op) {
      */
     if (op == OP_DOOP) {
         proc->state = PROC_READY;
-        prio_q_add(ready, proc, actual_priority(proc));
+        prio_q_add(nodes[proc->node].ready, proc, actual_priority(proc));
         proc->wait_count++;
-        proc->enqueue_time = time;
+        proc->enqueue_time = nodes[proc->node].time;
     } else if (op == OP_BLOCK) {
         /* Use the duration field of the process to store their wake-up time.
          */
         proc->state = PROC_BLOCKED;
-        proc->duration += time;
-        prio_q_add(blocked, proc, proc->duration);
+        proc->duration += nodes[proc->node].time;
+        prio_q_add(nodes[proc->node].blocked, proc, proc->duration);
     } else {
         proc->state = PROC_FINISHED;
+        pthread_mutex_lock(&lock);
+        prio_q_add(finished, proc, nodes[proc->node].time*100*100 + proc->node*100 + proc->id);
+        pthread_mutex_unlock(&lock);
     }
-    print_process(proc);
+    //printf("cajnscjac");
+    print_process(proc,nodes[proc->node].time);
 }
 
 /* Admit a process into the simulation
@@ -111,10 +161,13 @@ static void insert_in_queue(context *proc, int next_op) {
 extern int process_admit(context *proc) {
     /* Use a static variable to assign each process a unique process id.
      */
-    proc->id = next_proc_id;
-    next_proc_id++;
+    proc->id = nodes[proc->node].next_proc_id;
+    nodes[proc->node].next_proc_id++;
     proc->state = PROC_NEW;
-    print_process(proc);
+    //lock
+
+    print_process(proc,nodes[proc->node].time);
+
     insert_in_queue(proc, 1);
     return 1;
 }
@@ -125,31 +178,31 @@ extern int process_admit(context *proc) {
  * @returns:
  *   returns 1
  */
-extern int process_simulate() {
+extern int process_simulate(int nodeID) {
     context *cur = NULL;
     int cpu_quantum;
 
     /* We can only stop when all processes are in the finished state
      * no processes are readdy, running, or blocked
      */
-    while(!prio_q_empty(ready) || !prio_q_empty(blocked) || cur != NULL) {
+    while(!prio_q_empty(nodes[nodeID].ready) || !prio_q_empty(nodes[nodeID].blocked) || cur != NULL) {
         int preempt = 0;
 
         /* Step 1: Unblock processes
          * If any of the unblocked processes have higher priority than current running process
          *   we will need to preempt the current running process
          */
-        while (!prio_q_empty(blocked)) {
+        while (!prio_q_empty(nodes[nodeID].blocked)) {
             /* We can stop ff process at head of queue should not be unblocked
              */
-            context *proc = prio_q_peek(blocked);
-            if (proc->duration > time) {
+            context *proc = prio_q_peek(nodes[nodeID].blocked);
+            if (proc->duration > nodes[nodeID].time) {
                 break;
             }
 
             /* Move from blocked and reinsert into appropriate queue
              */
-            prio_q_remove(blocked);
+            prio_q_remove(nodes[nodeID].blocked);
             insert_in_queue(proc, 1);
 
             /* preemption is necessary if a process is running, and it has lower priority than
@@ -176,18 +229,23 @@ extern int process_simulate() {
         /* Step 3: Select next ready process to run if none are running
          * Be sure to keep track of how long it waited in the ready queue
          */
-        if (cur == NULL && !prio_q_empty(ready)) {
-            cur = prio_q_remove(ready);
-            cur->wait_time += time - cur->enqueue_time;
-            cpu_quantum = quantum;
+        if (cur == NULL && !prio_q_empty(nodes[nodeID].ready)) {
+            cur = prio_q_remove(nodes[nodeID].ready);
+            cur->wait_time += nodes[nodeID].time - cur->enqueue_time;
+            cpu_quantum = nodes[nodeID].quantum;//might need to give separate quantum
             cur->state = PROC_RUNNING;
-            print_process(cur);
+            //pthread_mutex_lock(&lock);
+            print_process(cur,nodes[nodeID].time);
+            //pthread_mutex_unlock(&lock);
+            //printf("vwfgwgwefg");
         }
 
         /* next clock tick
          */
-        time++;
+        nodes[nodeID].time++;
     }
 
+
+    //printf("close to return \n");
     return 1;
 }

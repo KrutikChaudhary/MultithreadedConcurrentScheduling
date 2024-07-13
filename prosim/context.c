@@ -31,8 +31,7 @@ extern context *context_load(FILE *fin) {
      * We assume it will be correct for the most part.
      */
     int size;
-    int node;
-    if (fscanf(fin, "%10s %d %d %d", cur->name, &size, &cur->priority, &node) < 3) {
+    if (fscanf(fin, "%10s %d %d %d", cur->name, &size, &cur->priority, &cur->node) < 3) {
         fprintf(stderr, "Bad input: Expecting program name, size, and priority\n");
         return NULL;
     }
@@ -183,7 +182,7 @@ extern int context_cur_op(context *cur) {
  *   none
  */
 extern void context_stats(context *cur, FILE *fout) {
-    fprintf(fout,"Process %d: Run time %d, Block time %d, Wait time %d\n", cur->id,
-            cur->doop_time, cur->block_time, cur->wait_time);
+//    fprintf(fout,"| %5.5d | Proc %02d.%02d | Run %d, Block %d, Wait %d\n", cur->id,
+//            cur->doop_time, cur->block_time, cur->wait_time);
 }
 
