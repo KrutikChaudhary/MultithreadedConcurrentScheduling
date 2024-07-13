@@ -83,11 +83,14 @@ extern int process_init(int cpu_quantum, int nodeId) {
 extern void print_final_stats(){
     while(!prio_q_empty(finished)){
         context *cur = prio_q_remove(finished);
-        printf("| %5.5d | Proc %02d.%02d | Run %d, Block %d, Wait %d\n",nodes[cur->node].time, cur->node, cur->id, cur->doop_time,cur->block_time, cur->wait_time);
+        printf("| %5.5d | Proc %02d.%02d | Run %d, Block %d, Wait %d\n",cur->finish_time, cur->node, cur->id, cur->doop_time,cur->block_time, cur->wait_time);
     }
 }
 
 static void print_process(context *proc, int time) {
+    if(proc->state==PROC_FINISHED){
+        proc->finish_time=nodes[proc->node].time;
+    }
     //pthread_mutex_lock(&lock);
     printf("[%02d] %5.5d: process %d %s\n" ,proc->node, time, proc->id, states[proc->state]);
     //pthread_mutex_lock(&lock);
@@ -143,9 +146,10 @@ static void insert_in_queue(context *proc, int next_op) { //***//
         proc->duration += nodes[proc->node].time;
         prio_q_add(nodes[proc->node].blocked, proc, proc->duration);
     } else {
+        //proc->finish_time=nodes[proc->node].time;
         proc->state = PROC_FINISHED;
         pthread_mutex_lock(&lock);
-        prio_q_add(finished, proc, nodes[proc->node].time*100*100 + proc->node*100 + proc->id);
+        prio_q_add(finished, proc, proc->finish_time*100*100 + proc->node*100 + proc->id);
         pthread_mutex_unlock(&lock);
     }
     //printf("cajnscjac");

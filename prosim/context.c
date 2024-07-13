@@ -144,6 +144,7 @@ extern int context_next_op(context *cur) {
                 }
                 break;
             case OP_HALT:
+//                cur->finish_time=
                 return 0;
             default:
                 printf("error, unknown opcode %d at ip %d\n", cur->code[cur->ip].op, cur->ip);
