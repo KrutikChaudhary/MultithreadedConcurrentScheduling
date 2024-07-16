@@ -172,8 +172,6 @@ extern int process_admit(context *proc) {
  */
 extern int process_simulate(int nodeID) {
     context *cur = NULL;
-//    int cpu_quantum;
-    nodes[nodeID].cpu_quantum;
 
     /* We can only stop when all processes are in the finished state
      * no processes are readdy, running, or blocked
