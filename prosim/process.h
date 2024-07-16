@@ -37,7 +37,21 @@ extern int process_admit(context *proc);
  *   returns 1
  */
 extern int process_simulate(int nodeID);
+
+/* Initialize finished queue
+ * @params:
+ *   none
+ * @returns:
+ *   returns void
+ */
 extern void finished_queue_init();
+
+/* Print final stats
+ * @params:
+ *   none
+ * @returns:
+ *   returns void
+ */
 extern void print_final_stats();
 
 #endif //PROSIM_PROCESS_H
