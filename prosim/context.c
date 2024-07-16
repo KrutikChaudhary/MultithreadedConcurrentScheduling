@@ -173,12 +173,3 @@ extern int context_cur_op(context *cur) {
     assert(cur->ip >= 0);
     return cur->code[cur->ip].op;
 }
-
-/* Outputs aggregate statistics about a process to the specified file.
- * @params:
- *   cur: pointer to process context
- *   fout: FILE into which the output should be written
- * @returns:
- *   none
- */
-

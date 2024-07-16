@@ -16,7 +16,7 @@ typedef struct opcode {
 } opcode;
 
 typedef struct context {
-    int node;
+    int node;                   /* node id */
     opcode *code;               /* array of primitives */
     int *stack;                 /* stack for processing loops */
     char name[11];              /* program name */

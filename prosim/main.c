@@ -6,9 +6,9 @@
 
 
 int main() {
-    int num_procs;
-    int quantum;
-    int NumNodes;
+    int num_procs; //number of processes
+    int quantum; //quantum time for each thread/node
+    int NumNodes; //number of threads
 
     /* Read in the header of the process description with minimal validation
      */
@@ -26,11 +26,11 @@ int main() {
     for(int i = 1; i<= NumNodes; i++){
         process_init(quantum,i);
     }
-    /* We use an array of pointers to contexts to track the processes.
+    /* an array of pointers to contexts to track the processes.
      */
     context **procs  = calloc(num_procs, sizeof(context *));
 
-    /* Load and admit each process, if an error occurs, we just give up.
+    /* Load and admit each process, if an error occurs, return -1.
      */
     for (int i = 0; i < num_procs; i++) {
         procs[i] = context_load(stdin);
@@ -41,11 +41,11 @@ int main() {
         process_admit(procs[i]);
     }
 
-    //declare tid
+    //declare tid array
     pthread_t tid[NumNodes];
 
 
-    //create
+    //create threads
     for (int i = 0; i < NumNodes; i++) {
         int nodeID = i + 1;
         int rc = pthread_create(&tid[i], NULL, process_simulate, nodeID);

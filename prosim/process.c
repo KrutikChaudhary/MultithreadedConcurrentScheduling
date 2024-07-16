@@ -17,7 +17,7 @@ typedef struct threadNode{
     prio_q_t *blocked; //blocked queue to store the blocked processes
     prio_q_t *ready; //ready queue to store the ready processes
     int next_proc_id; //to store the next process id.
-    int cpu_quantum;
+    int cpu_quantum; //cpu current quantum
 } threadNode; //Struct for a thread/node
 
 //array of all the nodes/threads
