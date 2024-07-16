@@ -4,11 +4,6 @@
 #include "context.h"
 #include "process.h"
 
-void* thread_function(void* arg) {
-    int nodeID = *((int*)arg);
-    process_simulate(nodeID);
-    return NULL;
-}
 
 int main() {
     int num_procs;
@@ -50,41 +45,21 @@ int main() {
 
     pthread_t tid[NumNodes];
 
-//    for (int i=0; i<NumNodes; i++) {
-//        int r = pthread_create(&tid[i],
-//                           NULL,
-//                           process_simulate(i+1),
-//                           NULL);
-//    }
 
+    //create
     for (int i = 0; i < NumNodes; i++) {
-        int* nodeID = malloc(sizeof(int));
-        if (nodeID == NULL) {
-            perror("Failed to allocate memory");
-            exit(EXIT_FAILURE);
-        }
-        *nodeID = i + 1;  // Assuming nodeID starts from 1
-
-        int rc = pthread_create(&tid[i], NULL, thread_function, nodeID);
+        int nodeID = i + 1;
+        int rc = pthread_create(&tid[i], NULL, process_simulate, nodeID);
     }
-    //printf("create over \n");
+
+    //join
     for (int i=0; i<NumNodes; i++){
-        //printf("join loop %d\n",i);
         int r = pthread_join(tid[i],
                          NULL);
     }
 
+    //print end stats
     print_final_stats();
-    //printf("join loop over\n");
-    /* All the magic happens in here
-     */
-
-
-    /* Output the statistics for processes in order of amdmission.
-     */
-//    for (int i = 0; i < num_procs; i++) {
-//        context_stats(procs[i], stdout);
-//    }
 
     return 0;
 }
