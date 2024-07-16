@@ -32,7 +32,7 @@ typedef struct context {
     int block_time;             /* number of clock ticks spent being blocked */
     int wait_count;             /* number of times process is added to the ready queue */
     int wait_time;              /* number of clock ticks spent waiting in ready queue */
-    int finish_time;
+    int finish_time;            /* finish time, when stopped running */
 } context;
 
 /* Move the instruction pointer to the next DOOP, BLOCK or HALT to be executed.
@@ -52,15 +52,6 @@ extern int context_next_op(context *cur);
  *   pointer to the new context or NULL if an error has occurred
  */
 extern context *context_load(FILE *fin);
-
-/* Outputs aggregate statistics about a process to the specified file.
- * @params:
- *   cur: pointer to process context
- *   fout: FILE into which the output should be written
- * @returns:
- *   none
- */
-extern void context_stats(context *cur, FILE *fout);
 
 /* returns the duration of the current primitive.
  * @params:

@@ -1,31 +1,29 @@
 //
 // Created by Alex Brodsky on 2023-05-07.
+// Modified by Krutik Chaudhary for assignment of concurrent thread/node computation
 //
 
 #include <malloc.h>
 #include "process.h"
 #include "prio_q.h"
 #include <pthread.h>
-//need separate queue for all thread
-//need to store proc for each thread
-//need to figure out how to simulate each thread
-//need separate quantum and time for all of them
+
+//finished queue to store when process is ended. And print stats later.
 static prio_q_t *finished;
+
 typedef struct threadNode{
-    int n; //curr size;
-    context **procs;
-    int quantum;
-    int time;
-    prio_q_t *blocked;
-    prio_q_t *ready;
-    int next_proc_id;
-} threadNode;
+    int quantum; //size of one quantum time run
+    int time; //current time
+    prio_q_t *blocked; //blocked queue to store the blocked processes
+    prio_q_t *ready; //ready queue to store the ready processes
+    int next_proc_id; //to store the next process id.
+} threadNode; //Struct for a thread/node
+
+//array of all the nodes/threads
 static threadNode *nodes;
 
+//lock for critical sections
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-
-//static int time = 0;
-//static ;
 
 enum {
     PROC_NEW = 0,
@@ -33,38 +31,30 @@ enum {
     PROC_RUNNING,
     PROC_BLOCKED,
     PROC_FINISHED
-};
+};//states enum
 
 static char *states[] = {"new", "ready", "running", "blocked", "finished"};
 
-//static int quantum;
-
-/* Initialize the simulation
- * @params:
- *   quantum: the CPU quantum to use in the situation
- * @returns:
- *   returns 1
- */
+//function to initialize the finished queue
 extern void finished_queue_init(){
     finished = prio_q_new();
 }
+
 //function to initialize the array of threadNodes
-extern int process_threadNodes_init(int numNodes){
+extern void process_threadNodes_init(int numNodes){
     nodes = (threadNode *)calloc(numNodes + 1, sizeof(threadNode));
-    if(nodes){
-        return 1;
-    } else {
-        return 0;
-    }
 }
 
-
+/* Initialize the simulation for each thread
+ * @params:
+ *   quantum: the CPU quantum to use in the situation of each thread
+ * @returns:
+ *   returns 1
+ */
 extern int process_init(int cpu_quantum, int nodeId) {
     /* Set up the queues and store the quantum
      * Assume the queues will be allocated
      */
-    nodes[nodeId].n=0;
-    nodes[nodeId].procs= calloc(100, sizeof(context *));
     nodes[nodeId].quantum = cpu_quantum;
     nodes[nodeId].time = 0;
     nodes[nodeId].blocked = prio_q_new();
@@ -74,12 +64,9 @@ extern int process_init(int cpu_quantum, int nodeId) {
 }
 
 /* Print state of process
- * @params:
- *   proc: process' context
  * @returns:
  *   none
- */ //AL
-
+ */
 extern void print_final_stats(){
     while(!prio_q_empty(finished)){
         context *cur = prio_q_remove(finished);
@@ -88,13 +75,12 @@ extern void print_final_stats(){
 }
 
 static void print_process(context *proc, int time) {
-    if(proc->state==PROC_FINISHED){
+    if(proc->state==PROC_FINISHED){ //set the finished time if finished
         proc->finish_time=nodes[proc->node].time;
     }
-    //pthread_mutex_lock(&lock);
+    pthread_mutex_lock(&lock);
     printf("[%02d] %5.5d: process %d %s\n" ,proc->node, time, proc->id, states[proc->state]);
-    //pthread_mutex_lock(&lock);
-
+    pthread_mutex_unlock(&lock);
 }
 
 /* Compute priority of process, depending on whether SJF or priority based scheduling is used
@@ -132,7 +118,7 @@ static void insert_in_queue(context *proc, int next_op) { //***//
     /* 3 cases:
      * 1. If DOOP, process goes into ready queue
      * 2. If BLOCK, process goes into blocked queue
-     * 3. If HALT, process is not queued
+     * 3. If HALT, process is added to the finished queue
      */
     if (op == OP_DOOP) {
         proc->state = PROC_READY;
@@ -146,13 +132,11 @@ static void insert_in_queue(context *proc, int next_op) { //***//
         proc->duration += nodes[proc->node].time;
         prio_q_add(nodes[proc->node].blocked, proc, proc->duration);
     } else {
-        //proc->finish_time=nodes[proc->node].time;
         proc->state = PROC_FINISHED;
         pthread_mutex_lock(&lock);
         prio_q_add(finished, proc, proc->finish_time*100*100 + proc->node*100 + proc->id);
         pthread_mutex_unlock(&lock);
     }
-    //printf("cajnscjac");
     print_process(proc,nodes[proc->node].time);
 }
 
@@ -168,10 +152,9 @@ extern int process_admit(context *proc) {
     proc->id = nodes[proc->node].next_proc_id;
     nodes[proc->node].next_proc_id++;
     proc->state = PROC_NEW;
-    //lock
-
     print_process(proc,nodes[proc->node].time);
 
+    //insert
     insert_in_queue(proc, 1);
     return 1;
 }
@@ -238,10 +221,7 @@ extern int process_simulate(int nodeID) {
             cur->wait_time += nodes[nodeID].time - cur->enqueue_time;
             cpu_quantum = nodes[nodeID].quantum;//might need to give separate quantum
             cur->state = PROC_RUNNING;
-            //pthread_mutex_lock(&lock);
             print_process(cur,nodes[nodeID].time);
-            //pthread_mutex_unlock(&lock);
-            //printf("vwfgwgwefg");
         }
 
         /* next clock tick

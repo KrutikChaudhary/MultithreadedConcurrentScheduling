@@ -144,7 +144,6 @@ extern int context_next_op(context *cur) {
                 }
                 break;
             case OP_HALT:
-//                cur->finish_time=
                 return 0;
             default:
                 printf("error, unknown opcode %d at ip %d\n", cur->code[cur->ip].op, cur->ip);
@@ -182,8 +181,4 @@ extern int context_cur_op(context *cur) {
  * @returns:
  *   none
  */
-extern void context_stats(context *cur, FILE *fout) {
-//    fprintf(fout,"| %5.5d | Proc %02d.%02d | Run %d, Block %d, Wait %d\n", cur->id,
-//            cur->doop_time, cur->block_time, cur->wait_time);
-}
 

@@ -29,8 +29,6 @@ int main() {
     /* We use an array of pointers to contexts to track the processes.
      */
     context **procs  = calloc(num_procs, sizeof(context *));
-//
-//    process_init(quantum);
 
     /* Load and admit each process, if an error occurs, we just give up.
      */
@@ -43,6 +41,7 @@ int main() {
         process_admit(procs[i]);
     }
 
+    //declare tid
     pthread_t tid[NumNodes];
 
 

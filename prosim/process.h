@@ -10,9 +10,9 @@
  * @params:
  *   numNodes: the number of nodes of the array
  * @returns:
- *   returns 1 if successful
+ *   returns void
  */
-extern int process_threadNodes_init(int numNodes);
+extern void process_threadNodes_init(int numNodes);
 
 /* Initialize the simulation
  * @params:
