@@ -17,6 +17,7 @@ typedef struct threadNode{
     prio_q_t *blocked; //blocked queue to store the blocked processes
     prio_q_t *ready; //ready queue to store the ready processes
     int next_proc_id; //to store the next process id.
+    int cpu_quantum;
 } threadNode; //Struct for a thread/node
 
 //array of all the nodes/threads
@@ -63,7 +64,7 @@ extern int process_init(int cpu_quantum, int nodeId) {
     return 1;
 }
 
-/* Print state of process
+/* Print final stats of all processes
  * @returns:
  *   none
  */
@@ -74,6 +75,10 @@ extern void print_final_stats(){
     }
 }
 
+/* Print state of process
+ * @returns:
+ *   none
+ */
 static void print_process(context *proc, int time) {
     if(proc->state==PROC_FINISHED){ //set the finished time if finished
         proc->finish_time=nodes[proc->node].time;
@@ -167,7 +172,8 @@ extern int process_admit(context *proc) {
  */
 extern int process_simulate(int nodeID) {
     context *cur = NULL;
-    int cpu_quantum;
+//    int cpu_quantum;
+    nodes[nodeID].cpu_quantum;
 
     /* We can only stop when all processes are in the finished state
      * no processes are readdy, running, or blocked
@@ -203,11 +209,11 @@ extern int process_simulate(int nodeID) {
          */
         if (cur != NULL) {
             cur->duration--;
-            cpu_quantum--;
+            nodes[nodeID].cpu_quantum--;
 
             /* Process stops running if it is preempted, has used up their quantum, or has completed its DOOP
              */
-            if (cur->duration == 0 || cpu_quantum == 0 || preempt) {
+            if (cur->duration == 0 || nodes[nodeID].cpu_quantum == 0 || preempt) {
                 insert_in_queue(cur, cur->duration == 0);
                 cur = NULL;
             }
@@ -219,7 +225,7 @@ extern int process_simulate(int nodeID) {
         if (cur == NULL && !prio_q_empty(nodes[nodeID].ready)) {
             cur = prio_q_remove(nodes[nodeID].ready);
             cur->wait_time += nodes[nodeID].time - cur->enqueue_time;
-            cpu_quantum = nodes[nodeID].quantum;//might need to give separate quantum
+            nodes[nodeID].cpu_quantum = nodes[nodeID].quantum; //set cpu quantum
             cur->state = PROC_RUNNING;
             print_process(cur,nodes[nodeID].time);
         }
@@ -229,7 +235,5 @@ extern int process_simulate(int nodeID) {
         nodes[nodeID].time++;
     }
 
-
-    //printf("close to return \n");
     return 1;
 }
