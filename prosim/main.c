@@ -60,9 +60,7 @@ int main() {
     //print end stats
     print_final_stats();
 
-    //free memory
-    free(procs);
-    free(tid);
+    
 
     return 0;
 }
