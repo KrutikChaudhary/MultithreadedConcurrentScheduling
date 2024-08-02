@@ -1,0 +1,28 @@
+Assignment 3 Feedback
+
+Total Grade:    50  / 50 
+		
+
+----------------------------------------------------------- 
+
+Functionality:  20 / 20 
+
+   Comments:  all tests passed
+
+  
+----------------------------------------------------------- 
+
+Code Quality:   20 / 20 
+
+   Comments: Nice try
+
+  
+----------------------------------------------------------- 
+
+Code Clarity:   10 / 10 
+
+   Comments: nice try
+
+
+Marker name: Yufeng Xu
+Email: yx@dal.ca
