@@ -7,6 +7,7 @@ Key Features:
  - Process synchronization using locks and critical sections
  - Node-specific scheduling with concurrency
  - Summary output of process states and execution times
+
 Usage:
  - Clone the repository and copy the required files from previous assignments.
  - Compile the project using the provided CMakeLists.txt.
