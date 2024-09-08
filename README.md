@@ -1,4 +1,4 @@
-Multithreaded Concurrent Scheduler. 
+Multithreaded Concurrent Scheduler. (Concurrent thread simulation)
 
 This project simulates a multithreaded scheduling system across multiple nodes, building on prior assignments. Each node runs as an independent scheduler, simulating processes concurrently.
 
@@ -12,5 +12,3 @@ Usage:
  - Clone the repository and copy the required files from previous assignments.
  - Compile the project using the provided CMakeLists.txt.
  - Run the simulation with input describing the number of processes, quantum length, and nodes.
-
-Let me know if you need further details added!
